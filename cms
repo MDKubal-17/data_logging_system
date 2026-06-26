@@ -1,0 +1,98 @@
+import csv
+import time
+import tkinter as tk
+from tkinter import ttk
+
+CSV_FILE = "patient_data.csv"
+
+def check_alerts(row):
+    alerts = []
+
+    hr = int(row["HR"])
+    spo2 = int(row["SpO2"])
+    rr = int(row["RR"])
+    temp = float(row["Temp"])
+
+    if hr < 60 or hr > 100:
+        alerts.append("Abnormal Heart Rate")
+
+    if spo2 < 94:
+        alerts.append("Low SpO2")
+
+    if rr < 12 or rr > 20:
+        alerts.append("Abnormal Respiratory Rate")
+
+    if temp < 36 or temp > 38:
+        alerts.append("Abnormal Temperature")
+
+    return alerts
+
+
+class CentralMonitoringUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Central Monitoring System")
+        self.root.geometry("450x420")
+
+        title = tk.Label(
+            root, text="🏥 Central Monitoring System",
+            font=("Arial", 16, "bold")
+        )
+        title.pack(pady=10)
+
+        self.info = tk.Label(root, font=("Arial", 11), justify="left")
+        self.info.pack(pady=10)
+
+        self.status = tk.Label(root, font=("Arial", 12, "bold"))
+        self.status.pack(pady=10)
+
+        self.rows = self.load_csv()
+        self.index = 0
+
+        self.update_data()
+
+    def load_csv(self):
+        with open(CSV_FILE, "r") as f:
+            return list(csv.DictReader(f))
+
+    def update_data(self):
+        if self.index >= len(self.rows):
+            self.status.config(text="✔ Monitoring Complete", fg="green")
+            return
+
+        row = self.rows[self.index]
+
+        display_text = (
+            f"Patient ID : {row['PatientID']}\n"
+            f"Time       : {row['Timestamp']}\n\n"
+            f"Vitals:\n"
+            f"HR    : {row['HR']} bpm\n"
+            f"BP    : {row['BP']} mmHg\n"
+            f"SpO₂  : {row['SpO2']} %\n"
+            f"Temp  : {row['Temp']} °C\n"
+            f"RR    : {row['RR']} br/min"
+        )
+
+        self.info.config(text=display_text)
+
+        alerts = check_alerts(row)
+
+        if alerts:
+            self.status.config(
+                text="🚨 ALERT: " + ", ".join(alerts),
+                fg="red"
+            )
+        else:
+            self.status.config(
+                text="✅ All vitals normal",
+                fg="green"
+            )
+
+        self.index += 1
+        self.root.after(500, self.update_data)  # update every 1 sec
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = CentralMonitoringUI(root)
+    root.mainloop()
